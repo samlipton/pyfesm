@@ -54,6 +54,25 @@ def read_xyz(file,idx=0,ext='xyz'):
     X,Y,Z = np.asarray(X),np.asarray(Y),np.asarray(Z)
     return atm,X,Y,Z
 
+def read_md2(file,idx=0,ext='md2'):
+    
+    atm,X,Y,Z,q0,q1 = [],[],[],[],[],[]
+    with open(file+'.%s'%ext, 'r') as infile:
+        for line in infile:
+             line = line.split()
+             if line==[] or line[0].islower():
+                 continue
+             elif len(line)>6:
+                 atm.append(line[idx+1]); 
+                 x = float(line[idx+2]); X.append(x)
+                 y = float(line[idx+3]); Y.append(y)
+                 z = float(line[idx+4]); Z.append(z)
+                 q0.append(float(line[idx+5]));
+                 q1.append(float(line[idx+6]))
+    infile.close()
+    X,Y,Z = np.asarray(X),np.asarray(Y),np.asarray(Z)
+    return atm,X,Y,Z,q0,q1
+
 def read_cif(file,unit='Ang'):
     
     i,idx = 0,0
@@ -77,7 +96,8 @@ def read_cif(file,unit='Ang'):
              elif any(i in ['_','#'] for i in line[0]): # or len(line)<5 
                  continue
              elif len(line)>4:
-                 atmi = ''.join([i for i in line[0] if not i.isdigit()])
+                 # atmi = ''.join([i for i in line[0] if not i.isdigit()])
+                 atmi = ''.join([i for i in line[1] if not i.isdigit()])
                  atm.append(atmi); 
                  x = float(line[idx+0]); X0.append(x)
                  y = float(line[idx+1]); Y0.append(y)
@@ -94,51 +114,56 @@ def read_cif(file,unit='Ang'):
     Omega = c*np.sqrt(1+fcos)
     
     cell = np.zeros((3,3))
-    cell[0,:] = np.array([a,0,0])
-    cell[1,:] = np.array([b*np.cos(gamma),b*np.sin(gamma),0])
-    cell[2,:] = np.array([c*np.cos(beta),c*dcos/np.sin(gamma),Omega/np.sin(gamma)])
+    cell[0,:] = np.asarray([a,0,0])
+    cell[1,:] = np.asarray([b*np.cos(gamma),b*np.sin(gamma),0])
+    cell[2,:] = np.asarray([c*np.cos(beta),c*dcos/np.sin(gamma),Omega/np.sin(gamma)])
     
     if unit=='Ang':
-        X = np.dot(cell[:,0],np.array([X0,Y0,Z0]))
-        Y = np.dot(cell[:,1],np.array([X0,Y0,Z0]))
-        Z = np.dot(cell[:,2],np.array([X0,Y0,Z0]))
+        X = np.dot(cell[:,0],np.asarray([X0,Y0,Z0]))
+        Y = np.dot(cell[:,1],np.asarray([X0,Y0,Z0]))
+        Z = np.dot(cell[:,2],np.asarray([X0,Y0,Z0]))
         return atm,X,Y,Z,cell
     elif unit=='frac':
         return atm,X0,Y0,Z0,cell
     else:
         sys.exit('   unit is Ang or frac')
 
-def read_cube(file,Na,f_type='gaussian'):
+def read_cube(file,Na,ext='cube'):
     
     # gaussian : http://paulbourke.net/dataformats/cube/
+    # add header parameter to return just header
     
     n,mesh = np.zeros(3,dtype=int),np.zeros((3,3))
     output = []; 
-    with open(file+'.cube', 'r') as infile:
-        if f_type=='gaussian':
-            idx = 1;
-            for line in infile:
-                line = line.split(); 
-                if line==[]:
-                    continue
-                elif (idx-6)>Na :
-                    for line_i in line:
+    with open(file+'.%s'%ext, 'r') as infile:
+        idx = 1;
+        for line in infile:
+            line = line.split(); 
+            if line==[]:
+                continue
+            elif (idx-6)>Na:
+                for line_i in line:
+                    try:
                         output.append(float(line_i))
-                elif idx==3:
-                    line_f = [float(i) for i in line[1:]]
-                    x0 = np.asarray(line_f)*a0
-                elif idx in [4,5,6]:
-                    line_f = [float(i) for i in line[1:]]
-                    n[idx-4],mesh[idx-4,:] = int(line[0]),line_f
-                idx += 1
-        else:
-            sys.exit('   cube file not implemented')
+                    except:
+                        print(idx)
+                        output.append(0)
+            elif idx==3:
+                line_f = [float(i) for i in line[1:]]
+                x0 = np.asarray(line_f)*a0
+            elif idx in [4,5,6]:
+                line_f = [float(i) for i in line[1:]]
+                n[idx-4],mesh[idx-4,:] = int(line[0]),line_f
+            idx += 1
     infile.close()
     output_arr = np.zeros(n)
     for i in range(n[0]):
         for j in range(n[1]):
             for k in range(n[2]):
-                output_arr[i,j,k] = output[(i*n[1]+j)*n[2]+k]
+                try:
+                    output_arr[i,j,k] = output[(i*n[1]+j)*n[2]+k]
+                except:
+                    print(i,j,k)
     return output_arr,n,x0 
 
 ###############################################################################
@@ -170,7 +195,7 @@ def print_md2(atm,x,y,z,q0=[],i0=1):
 ###############################################################################
 
 def write_xyz(file,atm,x,y,z):
-    file.write('\n \n')
+    file.write('%s \n \n'%(len(atm)))
     for atmi,xi,yi,zi in zip(atm,x,y,z):
             file.write('   '+str(atmi)+'  '+str(xi)+'  '+str(yi)+'  '+str(zi)+'\n');    
 
@@ -178,30 +203,36 @@ def write_md2(file,atm,x,y,z,q0=[],i0=1):
     if q0==[]:
         q0 = OpenMX.q0(None,atm=atm)
     for i,atmi in enumerate(atm):
-            str_xi = '{0:.4f}'.format(x[i])
-            str_yi = '{0:.10f}'.format(y[i])
-            str_zi = '{0:.10f}'.format(z[i])
+            str_xi = '{0:.10f}'.format(x[i])
+            str_yi = '{0:.7f}'.format(y[i])
+            str_zi = '{0:.7f}'.format(z[i])
             str_atm = '   '+str(i+i0)+'   '+str(atmi);
             str_xyz = '   '+str_xi+'   '+str_yi+'   '+str_zi;
             str_q0  = '   '+str(q0[i])+' '+str(q0[i]);
             file.write(str_atm+str_xyz+str_q0+'\n');
-            
-def write_cube(file,X,U,dim=3):
-    if dim==3:
-        x,y,z = X
-        for xi,yi,zi,ui in zip(x,y,z,U):
-            file.write('  '+str(xi)+'  '+str(yi)+'  '+str(zi)+'  '+str(ui)+'\n')
-    elif dim==2:
-        x,y = X
-        for xi,yi,ui in zip(x,y,U):
-            file.write('  '+str(xi)+'  '+str(yi)+'  '+str(ui)+'\n')        
+
+###############################################################################
+#                               OpenMX                                        # 
+###############################################################################
+
+class Lammps:
+
+    def __init__(self):
+        
+        self.ptype = 'sw'
+        self.cell = np.zeros((3,3))
+        self.r0 = np.array([0,0,0])
+        self.atypes = {}
+        self.atoms = []
+        self.pos = np.zeros((0,3))
+        self.idx = np.zeros(0)
 
 ###############################################################################
 #                               OpenMX                                        # 
 ###############################################################################
 
 class OpenMX:
-    
+
     def __init__(self,name,path='.',ext='out',read=True):
         
         # file
@@ -209,6 +240,7 @@ class OpenMX:
         self.path = '%s/'%path
         self.ext = ext
         # system
+        self.T = 0
         self.Ns = 0 # Species number
         self.species = []
         self.Na = 0 # Atoms number
@@ -252,41 +284,42 @@ class OpenMX:
         self.nbds = 0
         self.Nkpath = 0
         self.kpath = np.zeros(0,dtype=int) # 2,Nkapth
-        
+
         # read
         if read:
             self.read()
+            if self.solver=='NEGF':
+                self.Et = np.linspace(self.E0[0],self.E0[1],self.NEt)
             if (self.acell==0).all():
                 self.acell = self.gcell*self.ngrid*a0
-    
+
     def read(self):
         
         read_Ek = False
         read_orb = False
         infile = open(self.path+self.name+'.%s'%self.ext,'r')    
         for line in infile:
-            line = line.split()
-            
+            line = line.split()     
             # self-consistent cycle
             if line[:1]==['scf.EigenvalueSolver']:
                 self.solver = line[1]
             elif line[:1]==['scf.Kgrid']:
                 line = [int(l) for l in line[1:4]]
                 self.Nk = np.asarray(line)
+            elif line[:1]==['scf.ElectronicTemperature']:
+                self.T = float(line[1])          
+            # negf solver
             elif line[:1]==['NEGF.scf.Kgrid']:
                 line = [int(l) for l in line[1:3]]
                 self.Nk_negf = np.asarray(line)
-                
-            # transmission
             elif line[:1]==['NEGF.tran.energydiv']:
                 self.NEt = int(line[1])
             elif line[:1]==['NEGF.tran.energyrange']:
-                self.Et = np.linspace(float(line[1]),float(line[2]),self.NEt)
+                self.E0 = [float(line[1]),float(line[2])]
                 self.nu = float(line[3])
             elif line[:1]==['NEGF.tran.Kgrid']:
                 line = [int(l) for l in line[1:3]]
-                self.Nkt = np.asarray(line)
-                
+                self.Nkt = np.asarray(line)           
             # system
             elif line[:1]==['Species.Number']:
                 self.Ns = int(line[1])
@@ -314,8 +347,14 @@ class OpenMX:
                 for i,line in zip(range(3),infile):
                     line = line.split()
                     line = [float(l.replace(',','')) for l in line[2:]]
-                    self.gcell[i,:] = line
-                    
+                    self.gcell[i,:] = line     
+            elif line[:3]==['Cell','vectors','(Ang.)']:
+                    for _ in range(4):
+                        next(infile)
+                    for i,line in zip(range(3),infile):
+                        line = line.split()
+                        line = [float(l) for l in line[2:5]]
+                        self.acell[i,:] = line
             # energy
             elif line[:1]==['Utot.']:
                 self.Utot = float(line[1])*Ha
@@ -326,15 +365,14 @@ class OpenMX:
             elif line[:5]==['Chemical','potential','of','left','lead']:
                 self.mu_ll = float(line[6])*Ha
             elif line[:5]==['Chemical','potential','of','right','lead']:
-                self.mu_rl = float(line[6])*Ha            
-                
+                self.mu_rl = float(line[6])*Ha                      
             # band structure
             elif line[::2]==['k1=','k2=','k3=']:
                 read_Ek = not read_Ek
                 next(infile)
             elif read_Ek:
                 if line==[]:
-                    read_Ek = not read_Ek
+                    read_Ek = False
                     if self.solver=='NEGF':
                         nlines = ((np.prod(self.Nk_negf)+1)//2-1)*(4+self.nbds)
                     else:
@@ -342,8 +380,7 @@ class OpenMX:
                     for _ in range(nlines):
                         next(infile)
                     continue
-                self.nbds = int(line[0])
-                
+                self.nbds = int(line[0])            
             # bands unfolding
             elif line[:1]==['Unfolding.LowerBound']:
                 self.Ebounds[0] = float(line[1])
@@ -377,8 +414,7 @@ class OpenMX:
                 for i,line in zip(range(self.Nk_orb),infile):
                     line = line.split()
                     line = [float(l) for l in line[-3:]]
-                    self.k_orb[i,:] = line
-                
+                    self.k_orb[i,:] = line         
             # Mulliken population
             elif line==['Up','spin','Down','spin','Sum','Diff']:
                 self.MC = np.zeros((self.Na,3))
@@ -386,8 +422,7 @@ class OpenMX:
                     line = line.split()
                     self.atm.append(line[1])
                     line = [float(l) for l in line[2:5]]
-                    self.MC[i,:] = line
-                    
+                    self.MC[i,:] = line             
             # orbitals (from Mulliken)
             elif line==['Decomposed','Mulliken','populations']:
                 j,s,p,d = 0,[],[],[]
@@ -411,11 +446,11 @@ class OpenMX:
                             self.p.append(p)
                             self.d.append(d)
                             s,p,d = [],[],[]
-                self.s = np.asarray(self.s)
-                self.p = np.asarray(self.p)
-                self.d = np.asarray(self.d)
-                    
-            # coordinates & forces
+                # ! different basis set for atoms 
+                # self.s = np.asarray(self.s)
+                # self.p = np.asarray(self.p)
+                # self.d = np.asarray(self.d)            
+            # forces
             elif line[:1]==['<coordinates.forces']:
                 self.coord = np.zeros((self.Na,3))
                 self.force = np.zeros((self.Na,3))
@@ -423,10 +458,9 @@ class OpenMX:
                 for i,line in zip(range(self.Na),infile):
                     line = line.split()
                     line = [float(l) for l in line[2:]]
-                    self.coord[i,:],self.force[i,:] = line[:3],line[3:]
-                    
+                    self.coord[i,:],self.force[i,:] = line[:3],line[3:]                  
         infile.close()
-    
+
     def q0(self,atm=''):   
         
         if atm=='':
@@ -450,14 +484,19 @@ class OpenMX:
                 q.append(5.5)
             elif atmi in ['Ti','W']:
                 q.append(6.0)
+            elif atmi in ['V']:
+                q.append(6.5)
             elif atmi in ['Mo','Cr']:
                 q.append(7.0)
             elif atmi in ['Pd','Pt']:
                 q.append(8.0)
             elif atmi in ['Au','Ag']:
                 q.append(8.5)
+            else:
+                q.append(0.0)
+                
         return np.asarray(q)   
-        
+
     def Ek(self,ext='out'):
         
         # read_Ek
@@ -490,18 +529,13 @@ class OpenMX:
         kx,ikx = np.unique(k0[0],return_inverse=True)
         ky,iky = np.unique(k0[1],return_inverse=True)
         kz,ikz = np.unique(k0[2],return_inverse=True)
-        nkx,nky,nkz = len(kx),len(ky),len(kz)
-        
+        nkx,nky,nkz = len(kx),len(ky),len(kz)      
         Ek = np.ones((nkx,nky,nkz,self.nbds))*100 # eV
         for i,Ei in enumerate(Ek0):
             ix,iy,iz = ikx[i],iky[i],ikz[i]
-            Ek[ix,iy,iz] = Ek0[i]
-        
+            Ek[ix,iy,iz] = Ek0[i]   
+            
         return (kx,ky,kz),Ek
-        ### experimental as not homogenous sampling
-        # kx,ky,kz = np.unique(k[:,0]),np.unique(k[:,1]),np.unique(k[:,2])
-        # nx,ny,nz = len(kx),len(ky),len(kz)
-        # return kx,ky,kz,Ek.reshape((nx,ny,nz,self.nbds))
 
     def write_Ek(self,Emin=-10,Emax=10):
         
@@ -531,10 +565,10 @@ class OpenMX:
                 if Ei>(Emin+mu) and Ei<(Emax+mu):
                     outfile.write('   '+'   '.join(line)+'\n')
                 if float(line[0])==nbands:
-                    outfile.write('   nbands'+'\n\n')        
+                    outfile.write('   nbands'+'\n\n')    
         infile.close() 
 
-    def bs(self,ext='BANDDAT',spin='1'):
+    def bds(self,ext='BANDDAT',spin='1'):
         
         k,E = [],[]; ki,Ei = [],[]
         infile = open(self.path+self.name+'.%s%s'%(ext,spin),'r')    
@@ -570,21 +604,31 @@ class OpenMX:
             for j in range(self.Nkpath):
                 Ei += E[i*self.Nkpath+j]
             Eval[:,i] = Ei        
+            
         return kpts,Eval
 
     def DoS(self,path='PDoS'):
-        
-        file = self.path+path+'/'+self.name+'.DOS.Tetrahedron'
-        E,DoS = read(file,num=True),read(file,index=1,num=True)                
+
+        name = 'Tetrahedron'
+        if self.solver=='NEGF':
+            name = 'NEGF'        
+        file = self.path+path+'/'+self.name+'.DOS.%s'%name
+        E,DoS = read(file,num=True),read(file,index=1,num=True)     
+           
         return E,DoS
-    
-    def PDoS(self,atom='',path='PDoS',name='Tetrahedron',orb=False):
+
+    def PDoS(self,atom='',path='PDoS',orb=False):
         
-        if atom=='':
-            atom = range(1,self.Na+1)
+        if isinstance(atom,np.ndarray):
+            pass
         elif isinstance(atom,int) or isinstance(atom,float):
             atom = range(atom,atom+1)
-            
+        elif atom=='':
+            atom = range(1,self.Na+1)
+        name = 'Tetrahedron'
+        if self.solver=='NEGF':
+            name = 'NEGF'
+        
         E,PDoS = [],[]
         for i in atom:
             file = self.path+path+'/'+self.name+'.PDOS.%s.atom%s'%(name,i)
@@ -608,7 +652,7 @@ class OpenMX:
                 Ei,PDoSi = read(file,num=True),read(file,index=1,num=True)
                 E.append(Ei); PDoS.append(PDoSi)
                 
-        return np.asarray(E),np.asarray(PDoS) 
+        return np.asarray(E[0]),np.asarray(PDoS) 
 
     def unfold_orb(self,orb_idx=[],Emin=0,Emax=0,spin='up'):        
         
@@ -631,16 +675,17 @@ class OpenMX:
                 orbi_proj = [float(line[i]) for i in orb_idx]      
                 orb_proj.append(orbi_proj)
         infile.close()      
-        return np.asarray(k),np.asarray(E),np.asarray(orb_proj)
         
+        return np.asarray(k),np.asarray(E),np.asarray(orb_proj)
+
     def fatbands(self,k_orb,E_orb,orb_proj,dE=.01,DE=.04,Dk=1e-2):
                
         # Intensity map for spectral weight
         # c.f. http://www.openmx-square.org/openmx_man3.9/node171.html
-    
-        kmin,kmax,nk = min(k_orb),max(k_orb),self.Nk_orb
+
+        k = np.unique(k_orb)    
+        nk = len(k)
         # nk = int((kmax-kmin)/dk)+1
-        k = np.linspace(kmin,kmax,nk) # kpoints path
         Emin,Emax = self.Ebounds
         nE = int((Emax-Emin)/dE)+1
         E = np.linspace(Emin,Emax,nE) # energy 
@@ -656,46 +701,53 @@ class OpenMX:
             Li = 1/(((X[ik0:ik1,iE0:iE1]-k_orb[i])/Dk)**2+((Y[ik0:ik1,iE0:iE1]-E_orb[i])/DE)**2+1)
             for j,orbij in enumerate(orbi):
                 Imap[ik0:ik1,iE0:iE1,j] += Li*orbij
+                
         return k,E,Imap
-    
-    def G0(self,n=0,V=0,SO=False):
+
+    def G0(self,n=0,V=0,SO=False,path=''):
         
         id0,id1 = 5,7
         if n==0:
             n = self.Nkt
         if V==0:
             V = abs(np.prod(np.linalg.det(self.acell[1:,1:])))
+            # print(V)
         if SO:
             id1 = id0
+        if path=='':
+            path=self.path
             
-        E = self.Et
-        if E==np.zeros(0):
-            f0 = open(self.path+self.name+'.tran0_0','r')
-            for line in (line.split() for line in f0):
-                if '#' in line[0]:
-                    continue
-                else:
-                    E.append(float(line[3]))
-            E = np.asarray(E)
-            self.NEt = len(E)
+        # if all(self.Et==np.zeros(0)):
+        E = []
+        f0 = open(path+self.name+'.tran0_0','r')
+        for line in (line.split() for line in f0):
+            if '#' in line[0]:
+                continue
+            else:
+                E.append(float(line[3]))
+        self.Et = np.asarray(E)
+        self.NEt = len(E)
             
         k = np.zeros((n[0],n[1],2))
         T = np.zeros((n[0],n[1],self.NEt,2))
         for i in range(0,n[0]):
             for j in range(0,n[1]):
-                fij = open(self.path+self.name+'.tran%s_%s'%(i,j),'r')
+                iE = 0
+                fij = open(path+self.name+'.tran%s_%s'%(i,j),'r')
                 for line in fij:
                     line = line.split()
                     if line[1::2]==['k2=','k3=']:
-                        k[i,j] = np.array([float(line[2]),float(line[4])])
+                        k[i,j] = np.asarray([float(line[2]),float(line[4])])
                     elif '#' in line[0]:
                         continue
                     else: 
-                        iE = int(line[0])
+                        # iE = int(line[0])
                         T[i,j,iE,:] = float(line[id0]),float(line[id1])
+                        iE += 1
                 fij.close()  
+                
         if SO:
-            return k,E,T*.5/V
-        return k,E,T/V
+            return k,self.Et,T*.5/V
+        return k,self.Et,T/V
 
 ###############################################################################
