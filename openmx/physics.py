@@ -32,6 +32,11 @@ def filter_energy_window(data: OpenMX, Emin, Emax):
     mask = (energies >= Emin) & (energies <= Emax)
     return np.where(mask, data.eigenvalues, np.nan)
 
+# =============================================================================
+# Band unfolding (Lorentzian spectral weight)
+# =============================================================================
+
+...
 
 # =============================================================================
 # Fatbands (Lorentzian spectral weight)

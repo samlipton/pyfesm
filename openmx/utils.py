@@ -27,7 +27,7 @@ def read_two_columns(path: Path) -> Tuple[np.ndarray, np.ndarray]:
     with open(path) as f:
         for line in f:
             parts = line.split()
-            if len(parts) >= 2:
+            if len(parts) >= 2 and ['#'] not in parts[0]:
                 E.append(parts[0])
                 V.append(parts[1])
     return np.asarray(E, float), np.asarray(V, float)
