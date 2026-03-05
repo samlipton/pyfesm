@@ -10,4 +10,6 @@ __all__ = [
     "OpenMX",
     "filter_energy_window",
     "fatbands",
+    "read_column",
+    "read_two_columns"
 ]

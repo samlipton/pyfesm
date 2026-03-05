@@ -21,7 +21,6 @@ from scipy.constants import value
 a0 = value("Bohr radius") * 1e10
 Ha = value("Hartree energy in eV")
 
-
 # =============================================================================
 # Parser state machine
 # =============================================================================
@@ -38,7 +37,6 @@ class ParseState(Enum):
 
 @dataclass
 class OpenMX:
-
     name: str
     path: Path = Path(".")
     ext: str = "out"
@@ -107,7 +105,6 @@ class OpenMX:
     # =========================================================================
 
     def read(self) -> None:
-
         state = ParseState.NONE
         file_path = self.path / f"{self.name}.{self.ext}"
 
@@ -258,6 +255,7 @@ class OpenMX:
                             elif parts[0] in ("d3z^2-r^2","dx^2-y^2","dxy","dxz","dyz"):
                                 d_list.append(parts[2:4])
                         t_list = s_list + p_list + d_list 
+                        
                         self.MC_orb.append(t_list)
 
                 # -------------------------------------------------------------
@@ -265,23 +263,29 @@ class OpenMX:
                 # -------------------------------------------------------------
 
                 elif key == "Unfolding.LowerBound":
-                    self.Ebounds[0] = float(parts[1])
+                    self.Eb_orbs[0] = float(parts[1])
 
                 elif key == "Unfolding.UpperBound":
-                    self.Ebounds[1] = float(parts[1])
+                    self.Eb_orbs[1] = float(parts[1])
 
                 elif key == "Unfolding.desired_totalnkpt":
-                    self.Nkpoints = int(parts[1])
+                    self.Nkt_orb = int(parts[1])
 
                 elif parts == ["Unfolding", "calculation", "for", "band", "structure"]:
                     self._parse_unfolding_block(f)                
 
-                elif parts[:3] == ["For", "each", "path:"]: # to implement
-                    vals = list(map(int, parts[4:4+self.Nkpoints+1]))
-                    #self.Nkpath_orb = np.array(vals)
-                    #self.ikpath_orb = np.cumsum([0] + vals[:-1])
+                # to implement: kp_orb (dict) and k_orb np.ndarray(Nkt_orb,3)
 
-                # to implement: ka kb kc and k_orb
+                #elif parts[:3] == ["For", "each", "path:"]: 
+                #    vals = list(map(int, parts[4:4+self.Nkpoints+1]))
+                #    self.Nkpath_orb = np.array(vals)
+                #    self.ikpath_orb = np.cumsum([0] + vals[:-1])
+
+                #elif parts == ["ka","kb","kc"]:
+                #    self.k_orb = np.array([
+                #        list(map(float, next(f).split()[-3:]))
+                #        for _ in range(np.sum(self.Nkpath_orb))
+                #])
 
                 # -------------------------------------------------------------
                 # Forces
@@ -315,7 +319,6 @@ class OpenMX:
 
     @property
     def eigenvalues(self) -> Tuple[np.ndarray, np.ndarray]:
-
         if self._eigenvalues is None:
             raise RuntimeError("Eigenvalues not parsed.")
 
@@ -334,8 +337,11 @@ class OpenMX:
     # =========================================================================
 
     def DoS(self, subdir="PDoS") -> Tuple[np.ndarray, np.ndarray]:
-        solver_name = "NEGF" if self.solver == "NEGF" else "Tetrahedron"
+        solver_name = self.solver
+        if not solver_name == "NEGF":
+             solver_name = "Tetrahedron"
         file = self.path / subdir / f"{self.name}.DOS.{solver_name}"
+
         return read_two_columns(file)
     
     # =========================================================================
@@ -343,13 +349,11 @@ class OpenMX:
     # =========================================================================
 
     def G0(self, grid=None):
-
         if grid is None:
             grid = self.Nk[:2]
 
         T = []
         E = None
-
         for i in range(grid[0]):
             for j in range(grid[1]):
                 file = self.path / f"{self.name}.tran{i}_{j}"
@@ -357,7 +361,6 @@ class OpenMX:
                 if E is None:
                     E = Ei
                 T.append(Ti)
-
         T = np.array(T).reshape(grid[0], grid[1], -1)
 
         return E, T

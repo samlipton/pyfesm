@@ -17,7 +17,6 @@ from scipy.constants import value
 a0 = value("Bohr radius") * 1e10
 Ha = value("Hartree energy in eV")
 
-
 # =============================================================================
 # Energy window filtering
 # =============================================================================
@@ -28,8 +27,8 @@ def filter_energy_window(data: OpenMX, Emin, Emax):
     """
 
     _,energies = data.eigenvalues()
-
     mask = (energies >= Emin) & (energies <= Emax)
+
     return np.where(mask, data.eigenvalues, np.nan)
 
 # =============================================================================
