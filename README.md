@@ -1,16 +1,15 @@
 # pyfesm 
 
-Python tools for parsing and post-processing **OpenMX** electronic structure calculations. 
+PYthon tools For Electronic Structure Calculations. 
 
 The project provides: 
-- A structured parser for OpenMX output files 
-- A clean separation between file I/O and physics post-processing 
-- Support for SCF calculations, band structures, NEGF transport, Mulliken populations, and band unfolding 
+- Parsing for output files 
+- Post-processing data for physical analysis 
 
-The goal is to provide a lightweight and transparent interface for extracting numerical data from OpenMX calculations and performing custom post-processing in Python. 
+The goal is to provide a lightweight and transparent interface in python for the **OpenMX** software package. 
 
 --- 
-## Philosophy 
+## Implementation
 
 ### Parser module 
 - Reads OpenMX output files 
@@ -19,10 +18,8 @@ The goal is to provide a lightweight and transparent interface for extracting nu
 
 ### Physics module 
 - Performs post-processing on parsed data 
-- Implements analysis routines (DOS, transport, unfolding, etc.) 
-
---- 
-## Features 
+ 
+#### Features 
 
 - **SCF and system data** 
 - **Band structure mapping** 
@@ -41,7 +38,9 @@ Install dependencies: ```bash pip install numpy scipy ```
 ## Basic Usage 
 
 ### OpenMX output file parser
-```python from pyfesm.openmx.parser import OpenMX <br> calc = OpenMX("Si", path=".") <br> print(calc.Utot) # total energy (eV) <br> print(calc.Nk) # k-grid ```
+```python from pyfesm.openmx.parser import OpenMX```
+```python calc = OpenMX("Si", path=".")```
+```python print(calc.Utot) # total energy (eV)```
 
 ### Band Structure map
 ```python (kx, ky, kz), Ek = calc.eigenvalues ``` 
