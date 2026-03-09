@@ -36,7 +36,7 @@ Install dependencies: ```$pip install numpy scipy ```
 ## Basic Usage 
 
 ### Output file parser
-```from pyfesm.openmx.parser import OpenMX``` <br>
+```from openmx import OpenMX``` <br>
 ```calc = OpenMX("Si", path=".")``` <br>
 ```print(calc.Utot) # total energy (eV)``` <br>
 
