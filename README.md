@@ -17,15 +17,11 @@ The goal is to provide a lightweight and transparent interface in python for the
 - Performs unit normalization (Hartree → eV, Bohr → Å) 
 
 ### Physics module 
-- Performs post-processing on parsed data 
- 
-#### Features 
-
-- **SCF and system data** 
-- **Band structure mapping** 
-- **Mulliken population analysis** 
-- **NEGF transport support** 
-- **Band unfolding data extraction** 
+- Performs post-processing on parsed data:
+  - Electronic band structure 
+  - Mulliken population
+  - Band unfolding 
+  - NEGF transport 
 
 --- 
 ## Installation 
@@ -37,25 +33,28 @@ Install dependencies: ```bash pip install numpy scipy ```
 --- 
 ## Basic Usage 
 
-### OpenMX output file parser
+### Output file parser
 ```python from pyfesm.openmx.parser import OpenMX```
 ```python calc = OpenMX("Si", path=".")```
 ```python print(calc.Utot) # total energy (eV)```
 
-### Band Structure map
+### Band structure map
 ```python (kx, ky, kz), Ek = calc.eigenvalues ``` 
 Returns: 
 - Unique k-grid axes 
 - Eigenvalue array with shape `(nkx, nky, nkz, nbands)` 
 
-### Density of States 
+### Density of states 
 ```python E, DOS = calc.DoS() ``` 
+Returns: 
+- Energy grid
+- Density of states 
 
-### NEGF Transmission 
+### NEGF transmission 
 ```python E, T = calc.G0() ``` 
 Returns: 
 - Energy grid 
-- Transmission array reshaped onto the transport k-grid 
+- Transmission array 
 
 ---
 ## Units 
@@ -70,10 +69,10 @@ Internally normalized to:
 ``` pyfesm/ 
 │ 
 ├── openmx/ 
-│ ├── parser.py 
-│ └── utils.py 
-│ 
-├── physics/ 
-│ └── README.md ```
+│ ├── parser.py
+│ └── physics.py
+│ └── utils.py  
+│
+└── README.md ```
 
 
