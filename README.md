@@ -41,7 +41,7 @@ Install dependencies: ```bash pip install numpy scipy ```
 ## Basic Usage 
 
 ### OpenMX output file parser
-```python from pyfesm.openmx.parser import OpenMX calc = OpenMX("Si", path=".") print(calc.Utot) # total energy (eV) print(calc.Nk) # k-grid ```
+```python from pyfesm.openmx.parser import OpenMX <br> calc = OpenMX("Si", path=".") <br> print(calc.Utot) # total energy (eV) <br> print(calc.Nk) # k-grid ```
 
 ### Band Structure map
 ```python (kx, ky, kz), Ek = calc.eigenvalues ``` 
