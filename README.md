@@ -41,15 +41,15 @@ Install dependencies: ```$pip install numpy scipy ```
 ```print(calc.Utot) # total energy (eV)``` <br>
 
 ### Electronic band structure
-```python (kx, ky, kz), Ek = calc.eigenvalues ``` <br>
+```(kx, ky, kz), Ek = calc.eigenvalues ``` <br>
 Returns the k-grid axes Eigenvalue array with shape `(nkx, nky, nkz, nbands)` 
 
 ### Density of states 
-```python E, DOS = calc.DoS() ``` <br>
+```E, DOS = calc.DoS() ``` <br>
 Returns the Energy grid and Density of states 
 
 ### NEGF transmission 
-```python E, T = calc.G0() ``` <br>
+```E, T = calc.G0() ``` <br>
 Returns the Energy grid and Transmission array 
 
 ---
