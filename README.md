@@ -14,14 +14,15 @@ The goal is to provide a lightweight and transparent interface in python for the
 ### Parser module 
 - Reads OpenMX output files 
 - Stores structured numerical data 
-- Performs unit normalization (Hartree → eV, Bohr → Å) 
+- Performs unit normalization on:
+  - Electronic structure
+  - Mulliken population
+  - NEGF transmissions
 
 ### Physics module 
 - Performs post-processing on parsed data:
-  - Electronic band structure 
-  - Mulliken population
-  - Band unfolding 
-  - NEGF transport 
+  - Energy filtering
+  - Band unfolding interpolation
 
 --- 
 ## Installation 
@@ -34,24 +35,24 @@ Install dependencies: ```bash pip install numpy scipy ```
 ## Basic Usage 
 
 ### Output file parser
-```python from pyfesm.openmx.parser import OpenMX```
-```python calc = OpenMX("Si", path=".")```
-```python print(calc.Utot) # total energy (eV)```
+```python from pyfesm.openmx.parser import OpenMX``` <br>
+```python calc = OpenMX("Si", path=".")``` <br>
+```python print(calc.Utot) # total energy (eV)``` <br>
 
-### Band structure map
-```python (kx, ky, kz), Ek = calc.eigenvalues ``` 
+### Electronic structure
+```python (kx, ky, kz), Ek = calc.eigenvalues ``` <br>
 Returns: 
 - Unique k-grid axes 
 - Eigenvalue array with shape `(nkx, nky, nkz, nbands)` 
 
 ### Density of states 
-```python E, DOS = calc.DoS() ``` 
+```python E, DOS = calc.DoS() ``` <br>
 Returns: 
 - Energy grid
 - Density of states 
 
 ### NEGF transmission 
-```python E, T = calc.G0() ``` 
+```python E, T = calc.G0() ``` <br>
 Returns: 
 - Energy grid 
 - Transmission array 
