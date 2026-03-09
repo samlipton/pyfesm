@@ -15,7 +15,8 @@ The goal is to provide a lightweight and transparent interface in python for the
 - Reads OpenMX output files 
 - Stores structured numerical data 
 - Performs unit normalization on:
-  - Electronic structure
+  - SCF and System data
+  - Electronic band structure
   - Mulliken population
   - NEGF transmissions
 
@@ -39,7 +40,7 @@ Install dependencies: ```bash pip install numpy scipy ```
 ```python calc = OpenMX("Si", path=".")``` <br>
 ```python print(calc.Utot) # total energy (eV)``` <br>
 
-### Electronic structure
+### Electronic band structure
 ```python (kx, ky, kz), Ek = calc.eigenvalues ``` <br>
 Returns: 
 - Unique k-grid axes 
