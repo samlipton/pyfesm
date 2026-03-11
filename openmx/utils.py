@@ -1,7 +1,7 @@
 """
-Utilities routines.
 
-Responsible only handling IO operations.
+General utilities routines on parsed data.
+
 """
 
 import numpy as np

@@ -1,8 +1,9 @@
 """
-Physics structure utilities.
 
-Pure numerical analysis layer.
-No file parsing here.
+Physics post-processing utilities on parsed data:
+    - Energy filtering
+    - Band unfolding interpolation
+
 """
 
 import numpy as np

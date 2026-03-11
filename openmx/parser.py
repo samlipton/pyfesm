@@ -1,7 +1,9 @@
 """
-Data model and parser for OpenMX calculations.
 
-returns structured OpenMX data after reading output files
+Parser for OpenMX calculations:
+    - Reads OpenMX output files
+    - Stores structured numerical data
+
 """
 
 from __future__ import annotations
