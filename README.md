@@ -1,6 +1,6 @@
 # pyfesm 
 
-PYthon tools For Electronic Structure Calculations. 
+PYthon tools For Electronic Structure calculations in Material science. 
 
 The project provides: 
 - Parsing for output files 
@@ -8,8 +8,9 @@ The project provides:
 
 The goal is to provide a lightweight and transparent interface in python for the **OpenMX** software package. 
 
---- 
 ## Implementation
+
+The modules and the structure conforms to the parsing and post-processing functionalities. 
 
 ### Parser module 
 - Reads OpenMX output files 
@@ -25,15 +26,27 @@ The goal is to provide a lightweight and transparent interface in python for the
   - Energy filtering
   - Band unfolding interpolation
 
---- 
+### Code Structure 
+
+``` pyfesm/ 
+│ 
+├── openmx/ 
+│ ├── parser.py
+│ └── physics.py
+│ └── utils.py  
+│
+└── README.md 
+```
+
 ## Installation 
 
 Clone the repository: ```$git clone https://github.com/samlipton/pyfesm.git cd pyfesm ``` 
 
 Install dependencies: ```$pip install numpy scipy ``` 
 
---- 
 ## Basic Usage 
+
+Some examples of the functionalities are listed afterwards
 
 ### Output file parser
 ```from pyfesm.openmx.parser import OpenMX``` <br>
@@ -52,23 +65,8 @@ Returns the Energy grid and Density of states
 ```E, T = calc.G0() ``` <br>
 Returns the Energy grid and Transmission array 
 
----
-## Units 
+### Units 
 
 Internally normalized to: 
 - **Energy:** eV 
 - **Length:** angstroem 
-
---- 
-## Code Structure 
-
-``` pyfesm/ 
-│ 
-├── openmx/ 
-│ ├── parser.py
-│ └── physics.py
-│ └── utils.py  
-│
-└── README.md ```
-
-
